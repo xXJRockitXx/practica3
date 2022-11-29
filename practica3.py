@@ -7,6 +7,59 @@ from base64 import decode
 from datetime import datetime
 from pysnmp.hlapi import *
 
+"""
+.1.3.6.1.2.1.25.1.2
+.1.3.6.1.4.1.2021.4.6.0
+
+RAM TOTAL Kylobytes:
+snmpget -v 1 -c LuisAlbertoGarcia localhost .1.3.6.1.4.1.2021.4.5.0
+snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.5.0
+                                      .1.3.6.1.4.1.2021.4.5
+RAM Usada:
+snmpget -v 1 -c LuisAlbertoGarcia localhost .1.3.6.1.4.1.2021.4.6.0
+snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.6.0
+
+Total RAM Free: 
+snmpget -v 1 -c LuisAlbertoGarcia localhost .1.3.6.1.4.1.2021.4.11.0
+snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.11.0
+
+Total RAM Shared: 
+snmpget -v 1 -c LuisAlbertoGarcia localhost .1.3.6.1.4.1.2021.4.13.0
+snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.13.0
+
+Total RAM Buffered: 
+snmpget -v 1 -c LuisAlbertoGarcia localhost .1.3.6.1.4.1.2021.4.14.0
+snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.14.0
+
+Total RAM Cache:
+snmpget -v 1 -c LuisAlbertoGarcia localhost .1.3.6.1.4.1.2021.4.15.0
+snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.15.0
+
+
+SUMAR:
+snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.6.0
+snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.14.0
+snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.15.0
+
+MAGIA:
+snmpwalk -c JRockitDesk -v 2c localhost .1.3.6.1.4.1.2021.4
+
+Usada es free + shared + (buff / cache) 
+
+FEHCA Y HORA 
+snmpget -v 1 -c JRockitDesk localhost 1.3.6.1.2.1.25.1.2.0
+
+TIEMPO DE ACTIVIDAD:
+snmpget -v 1 -c JRockitDesk localhost 1.3.6.1.2.1.25.1.1.0
+
+IN:
+snmpget -v 1 -c JRockitDesk localhost 1.3.6.1.2.1.2.2.1.10.x
+
+OUT:
+snmpget -v 1 -c JRockitDesk localhost 1.3.6.1.2.1.2.2.1.16.x
+
+"""
+
 class Agente:
     """ Clase para el manejo de los Agentes """
     def __init__(self, hostname, puerto, comunidad, vSNMP):
