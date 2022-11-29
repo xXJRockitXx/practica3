@@ -5,8 +5,8 @@ from email.mime.multipart import MIMEMultipart
 
 COMMASPACE = ', '
 # Define params
-rrdpath = '/home/jrockit/Documentos/Redes/practica3/RRD/'
-imgpath = '/home/jrockit/Documentos/Redes/practica3/IMG/'
+rrdpath = '/home/jrockit-hp/Documentos/Redes/practica3/RRD/'
+imgpath = '/home/jrockit-hp/Documentos/Redes/practica3/IMG/'
 fname = 'trend.rrd'
 
 mailsender = "cruzadrian342@gmail.com"

@@ -8,8 +8,6 @@ from datetime import datetime
 from pysnmp.hlapi import *
 
 """
-.1.3.6.1.2.1.25.1.2
-.1.3.6.1.4.1.2021.4.6.0
 
 RAM TOTAL Kylobytes:
 snmpget -v 1 -c LuisAlbertoGarcia localhost .1.3.6.1.4.1.2021.4.5.0
@@ -35,16 +33,10 @@ Total RAM Cache:
 snmpget -v 1 -c LuisAlbertoGarcia localhost .1.3.6.1.4.1.2021.4.15.0
 snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.15.0
 
-
-SUMAR:
-snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.6.0
-snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.14.0
-snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.15.0
-
 MAGIA:
 snmpwalk -c JRockitDesk -v 2c localhost .1.3.6.1.4.1.2021.4
 
-Usada es free + shared + (buff / cache) 
+MEMORIA USADA es free + shared + (buff / cache) 
 
 FEHCA Y HORA 
 snmpget -v 1 -c JRockitDesk localhost 1.3.6.1.2.1.25.1.2.0
@@ -348,7 +340,7 @@ def nueva_pagina(pdf):
     """ Generamos una nueva pagina, colocamos encabezado y datos """
     pdf.logo("escom.png", 2, 2, 35, 25)
     pdf.titulos("Administracion de Servicios en Red", 0.0, 0.0)
-    pdf.titulos("Practica 2", 0.0, 10.0)
+    pdf.titulos("Practica 3", 0.0, 10.0)
     pdf.titulos("Luis Alberto Garcia Mejia | 4CM13", 0.0, 20.0)
     
     return pdf

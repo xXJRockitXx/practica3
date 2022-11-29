@@ -5,8 +5,8 @@ import time
 import datetime
 from  notify import send_alert_attached
 import time
-rrdpath = '/home/jrockit/Documentos/Redes/practica3/RRD/'
-imgpath = '/home/jrockit/Documentos/Redes/practica3/IMG/'
+rrdpath = '/home/jrockit-hp/Documentos/Redes/practica3/RRD/'
+imgpath = '/home/jrockit-hp/Documentos/Redes/practica3/IMG/'
 
 def generarGrafica(ultima_lectura):
     tiempo_final = int(ultima_lectura)
@@ -19,6 +19,9 @@ def generarGrafica(ultima_lectura):
                     '--upper-limit', '100',
                     "--title=Carga del CPU del agente Usando SNMP y RRDtools \n Detección de umbrales",
                     "DEF:cargaCPU="+rrdpath+"trend.rrd:CPUload:AVERAGE",
+                    "DEF:cargaRAM="+rrdpath+"trend.rrd:RAMload:AVERAGE",
+                    "DEF:cargaEntrada="+rrdpath+"trend.rrd:InOct:AVERAGE",
+                    "DEF:cargaSalida="+rrdpath+"trend.rrd:OutOct:AVERAGE",
                      "VDEF:cargaMAX=cargaCPU,MAXIMUM",
                      "VDEF:cargaMIN=cargaCPU,MINIMUM",
                      "VDEF:cargaSTDEV=cargaCPU,STDEV",
