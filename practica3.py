@@ -6,6 +6,11 @@ from fpdf import FPDF
 from base64 import decode
 from datetime import datetime
 from pysnmp.hlapi import *
+from threading import *
+from  notify import send_alert_attached
+
+rrdpath = '/home/jrockit/Documentos/Redes/practica3/RRD/'
+imgpath = '/home/jrockit/Documentos/Redes/practica3/IMG/'
 
 """
 
@@ -35,8 +40,11 @@ snmpget -v 1 -c JRockitDesk localhost .1.3.6.1.4.1.2021.4.15.0
 
 MAGIA:
 snmpwalk -c JRockitDesk -v 2c localhost .1.3.6.1.4.1.2021.4
+snmpwalk -c LuisAlbertoGarcia -v 2c localhost .1.3.6.1.4.1.2021.4
 
 MEMORIA USADA es free + shared + (buff / cache) 
+xd = free + buff + cache + shared
+USADA = total - xd
 
 FEHCA Y HORA 
 snmpget -v 1 -c JRockitDesk localhost 1.3.6.1.2.1.25.1.2.0
@@ -99,59 +107,24 @@ class Agente:
         """ Hacemos una consulta para obtener la información de contacto """
         consulta = consultaSNMP(self.comunidad, self.hostname, "1.3.6.1.2.1.1.4.0")
         return "\n1: " + consulta
-
-    def obtener_ubicacion(self):
-        """ Hacemos una consulta para obtener ubicacion """
-        consulta = consultaSNMP(self.comunidad, self.hostname, "1.3.6.1.2.1.1.6.0")
-        return "\nUbicacion: " + consulta
-
-    def obtener_interfaces(self):
-        """ Hacemos una consulta para obtener el número de interfaces
-        y por cada interfaz, mostrar su estado administratico """
-        consulta = consultaSNMP(self.comunidad, self.hostname, "1.3.6.1.2.1.2.1.0")
-        return consulta
-
-    def obtener_desc(self, oid):
-        """ Hacemos una consulta para una descripción de la
-        interfaz """
-        consulta = consultaSNMP(self.comunidad, self.hostname, oid)
-
-        if (self.win):
-            consulta = consulta[2:]
-            consulta = bytes.fromhex(consulta).decode("ASCII")
-        return consulta
-
-    def obtener_status(self, oid):
-        """ Hacemos una consulta para obtener el status de las
-        interfaces """
-        consulta = consultaSNMP(self.comunidad, self.hostname, oid)
-        return consulta
+    
+    def tiempo_actividad(self):
+        """ Hacemos una consulta para el tiempo de actividad del sistema """
+        consulta = consultaSNMP(self.comunidad, self.hostname, "1.3.6.1.2.1.25.1.1.0")
+        return "\nTiempo de Actividad: " + consulta
+    
+    def fecha_hora(self):
+        """ Hacemos una consulta para la fecha y hora del sistema """
+        consulta = consultaSNMP(self.comunidad, self.hostname, "1.3.6.1.2.1.25.1.2.0")
+        return "\nFecha y Hora: " + consulta
 
     def consultas_agente(self):
         consultasTxt = open("consultas.txt", "w")
 
-        insertar_txt(consultasTxt, "version: 1")
-        insertar_txt(consultasTxt, "\ndevice: server1")
-        insertar_txt(consultasTxt, "\ndescripcion: Accouting Server 1")
-        insertar_txt(consultasTxt, "\ndate: 2022-11-09")
-        insertar_txt(consultasTxt, "\ndefault protocol: Radius")
-        
-        insertar_txt(consultasTxt, "\nradte: 2022-11-08")
-        insertar_txt(consultasTxt, "\n#NAS-Ip address:")
-        insertar_txt(consultasTxt, "\n4:8.40.1.27")
-        insertar_txt(consultasTxt, "\n#NAS-Port-Type")
-        insertar_txt(consultasTxt, "\n5:61:2")
-        insertar_txt(consultasTxt, "\n#NAS-User-name")
-        insertar_txt(consultasTxt, self.obtener_contacto())
-        insertar_txt(consultasTxt, "\n#Acct-Status-Type:40:1")
-        insertar_txt(consultasTxt, "\n#Acct-Delay-Time:")
-        insertar_txt(consultasTxt, "\n" + consultaSNMP(self.comunidad, self.hostname, "1.3.6.1.2.1.4.2.0"))
-        insertar_txt(consultasTxt, "\n#Acct-Input-Octets:")
-        insertar_txt(consultasTxt, "\n" + consultaSNMP(self.comunidad, self.hostname, "1.3.6.1.2.1.2.2.1.10.1"))
-        insertar_txt(consultasTxt, "\n#Acct-Output-Octets:")
-        insertar_txt(consultasTxt, "\n" + consultaSNMP(self.comunidad, self.hostname, "1.3.6.1.2.1.2.2.1.16.1"))        
-        insertar_txt(consultasTxt, "\n#Acct-Session-Id:")
-        insertar_txt(consultasTxt, "\n#44:2")
+        insertar_txt(consultasTxt, self.obtener_nombre())
+        insertar_txt(consultasTxt, "\n" + self.obtener_so())
+        insertar_txt(consultasTxt, "\n" + self.tiempo_actividad())
+        insertar_txt(consultasTxt, "\n" + self.fecha_hora())
 
         consultasTxt.close()
 
@@ -215,7 +188,7 @@ def desplegar_menu():
     """ Mostramos el menú al usuario """
     limpiar_pantalla()
     print("Sistema de Administración de Red")
-    print("Práctica 1 - Adquisición de Información")
+    print("Práctica 3")
     print("Luis Alberto García Mejía \tGrupo: 4CM13 \tBoleta: 2020630178\n")
     print("Hola, elige una opción\n")
     print("1. Agregar Agente")
@@ -399,52 +372,234 @@ def generar_reporte(agentes):
     pausar()
     
 
-def generar_graficas(epochInicio, epochFinal):
-    """ Generamos las 5 graficas corresponsientes a mi bloque """
+def grafica_cpu(ultima_lectura):
+    tiempo_final = int(ultima_lectura)
+    tiempo_inicial = tiempo_final - 1800
     
-    """ Graficamos Paquetes multicast que ha enviado la interfaz de la interfaz de red de un agente """
-    graficar(
-        "Paquetes multicast enviados", "multicast", "Paquetes", 
-        "Paquetes multicast que ha enviado la \n interfaz de red de un agente",
-        "multiCastSalida", "maxPaq", "#FFC300", "Paquetes enviados", epochInicio, epochFinal)
-
-    """ Graficamos Paquetes IP que los protocolos locales (incluyendo ICMP) suministraron a IP en las 
-    solicitudes de transmisión. """
-    graficar("Paquetes IP enviados", "paquetesIp", "Paquetes IP", 
-            "Paquetes IP que los protocolos locales \n suministraron a IP en la transmisión",
-            "paquetesIpSalida", "maxPaq", "#2471a3", "Paquetes enviados", epochInicio, epochFinal)
-
-    """ Graficamos Mensajes ICMP que ha recibido el agente. """
-    graficar("Mensajes ICMP recibidos", "icmp", "Mensajes", 
-            "Mensajes ICMP que ha recibido \n el agente",
-            "icmpEntrada", "maxMen", "#a93226", "Mensajes enviados", epochInicio, epochFinal)
-
-    """ Graficamos Segmentos retransmitidos; es decir, el número de segmentos TCP transmitidos que 
-    contienen uno o más octetos transmitidos previamente """
-    graficar("Segmentos retransmitidos", "segmentos", "Segmentos", 
-            "Segmentos TCP transmitidos que contienen \n uno o más octetos transmitidos previamente",
-            "segmentosSalida", "maxSeg", "#6c3483", "Segmentos retransmitidos", epochInicio, epochFinal)
-
-    """ Graficamos Datagramas enviados por el dispositivo """
-    graficar("Datagramas enviados", "datagramas", "Datagramas", 
-            "Datagramas que ha enviado el\n dispositivo",
-            "datagramasSalida", "maxDat", "#2471a3", "Datagramas enviados", epochInicio, epochFinal)
-
-
-def solicitar_fecha(clave):
-    """ Solicitamos la fecha y hora al usuario, luego la convertimos a epoch """
-    limpiar_pantalla()
-    print("Ingresa la fecha y hora para el reporte (Y/m/d H:M:S)\n")
+    ret = rrdtool.graphv( imgpath+"cpu.png",
+                     "--start",str(tiempo_inicial),
+                     "--end",str(tiempo_final),
+                     "--vertical-label=Cpu load",
+                    '--lower-limit', '0',
+                    '--upper-limit', '100',
+                    "--title=Carga del CPU del agente Usando SNMP y RRDtools \n Detección de umbrales",
+                    "DEF:cargaCPU="+rrdpath+"trend.rrd:CPUload:AVERAGE",
+                     "VDEF:cargaMAX=cargaCPU,MAXIMUM",
+                     "VDEF:cargaMIN=cargaCPU,MINIMUM",
+                     "VDEF:cargaSTDEV=cargaCPU,STDEV",
+                     "VDEF:cargaLAST=cargaCPU,LAST",
+                     
+                     "CDEF:umbral25=cargaCPU,25,LT,0,cargaCPU,IF",
+                     "AREA:cargaCPU#00FF00:Carga del CPU",
+                     
+                     "AREA:umbral25#abebc6:Carga CPU mayor de 25",
+                     "HRULE:25#2ecc71:Umbral  25%",
+                     
+                     "CDEF:umbral50=cargaCPU,50,LT,0,cargaCPU,IF",
+                     "AREA:umbral50#f9e79f:Carga CPU mayor de 50",
+                     "HRULE:50#f1c40f:Umbral  50%",
+                     
+                     "CDEF:umbral75=cargaCPU,75,LT,0,cargaCPU,IF",
+                     "AREA:umbral75#FF9F00:Carga CPU mayor de 75",
+                     "HRULE:75#FF0000:Umbral  75%",
+                     
+                     "PRINT:cargaLAST:%6.2lf",
+                     "GPRINT:cargaMIN:%6.2lf %SMIN",
+                     "GPRINT:cargaSTDEV:%6.2lf %SSTDEV",
+                     "GPRINT:cargaLAST:%6.2lf %SLAST" )
     
-    if (clave == 1):
-        print("FECHA INICIAL")
-    else:
-        print("FECHA FINAL")
+
+def graficar_ram(ultima_lectura):
+    tiempo_final = int(ultima_lectura)
+    tiempo_inicial = tiempo_final - 1800
+    ret = rrdtool.graphv( imgpath+"ram.png",
+                     "--start",str(tiempo_inicial),
+                     "--end",str(tiempo_final),
+                     "--vertical-label=Cpu load",
+                    '--lower-limit', '0',
+                    '--upper-limit', '100',
+                    "--title=Carga de la RAM del agente Usando SNMP \n Detección de umbrales",
+                    "DEF:cargaRAM="+rrdpath+"trend.rrd:RAMload:AVERAGE",
+                     "VDEF:cargaMAX=cargaRAM,MAXIMUM",
+                     "VDEF:cargaMIN=cargaRAM,MINIMUM",
+                     "VDEF:cargaSTDEV=cargaRAM,STDEV",
+                     "VDEF:cargaLAST=cargaRAM,LAST",
+                     
+                     "CDEF:umbral25=cargaRAM,25,LT,0,cargaRAM,IF",
+                     "AREA:cargaRAM#00FF00:Carga de la RAM",
+                     
+                     "AREA:umbral25#abebc6:Carga RAM mayor de 25",
+                     "HRULE:25#2ecc71:Umbral  25%",
+                     
+                     "CDEF:umbral50=cargaRAM,50,LT,0,cargaRAM,IF",
+                     "AREA:umbral50#f9e79f:Carga RAM mayor de 50",
+                     "HRULE:50#f1c40f:Umbral  50%",
+                     
+                     "CDEF:umbral75=cargaRAM,75,LT,0,cargaRAM,IF",
+                     "AREA:umbral75#FF9F00:Carga RAM mayor de 75",
+                     "HRULE:75#FF0000:Umbral  75%",
+                     
+                     "PRINT:cargaLAST:%6.2lf",
+                     "GPRINT:cargaMIN:%6.2lf %SMIN",
+                     "GPRINT:cargaSTDEV:%6.2lf %SSTDEV",
+                     "GPRINT:cargaLAST:%6.2lf %SLAST" )
     
-    fecha = input("Fecha: ")
-    epoch = int(datetime.strptime(fecha, "%Y/%m/%d %H:%M:%S").timestamp())
-    pausar()
-    return epoch
+    
+def graficar_entrada(ultima_lectura):
+    tiempo_final = int(ultima_lectura)
+    tiempo_inicial = tiempo_final - 1800
+    ret = rrdtool.graphv( imgpath+"traficoEntrada.png",
+                     "--start",str(tiempo_inicial),
+                     "--end",str(tiempo_final),
+                     "--vertical-label=Bytes/s",
+                     "--title=Tráfico de Red (ENTRADA) de un agente \n Usando SNMP",
+                     "DEF:traficoEntrada="+rrdpath+"trend.rrd:InOct:AVERAGE",
+                     "CDEF:escalaIn=traficoEntrada,8,*",
+                     "VDEF:cargaMAX=traficoEntrada,MAXIMUM",
+                     "VDEF:cargaMIN=traficoEntrada,MINIMUM",
+                     "VDEF:cargaSTDEV=traficoEntrada,STDEV",
+                     "VDEF:cargaLAST=traficoEntrada,LAST",
+                     
+                     
+                     "CDEF:umbral1500=escalaIn,1500,LT,0,escalaIn,IF",
+                     "LINE1:escalaIn#00FF00:Tráfico de entrada",
+                     
+                     "LINE1:umbral1500#abebc6:Carga escalaIn mayor de 1500",
+                     "HRULE:1500#2ecc71:Umbral  1500",
+                     
+                     "CDEF:umbral2500=escalaIn,2500,LT,0,escalaIn,IF",
+                     "LINE1:umbral2500#f9e79f:Trafico Entrada mayor de 2500",
+                     "HRULE:2500#f1c40f:Umbral  2500",
+                     
+                     "CDEF:umbral4000=escalaIn,4000,LT,0,escalaIn,IF",
+                     "LINE1:umbral4000#FF9F00:Trafico Entrada mayor de 4000",
+                     "HRULE:4000#FF0000:Umbral  4000",
+                     
+                     "PRINT:cargaLAST:%6.2lf",
+                     "GPRINT:cargaMIN:%6.2lf %SMIN",
+                     "GPRINT:cargaSTDEV:%6.2lf %SSTDEV",
+                     "GPRINT:cargaLAST:%6.2lf %SLAST" )
+    
+    
+def graficar_salida(ultima_lectura):
+    tiempo_final = int(ultima_lectura)
+    tiempo_inicial = tiempo_final - 1800
+    ret = rrdtool.graphv( imgpath+"traficoSalida.png",
+                     "--start",str(tiempo_inicial),
+                     "--end",str(tiempo_final),
+                     "--vertical-label=Bytes/s",
+                     "--title=Tráfico de Red (SALIDA) de un agente \n Usando SNMP",
+                     "DEF:traficoSalida="+rrdpath+"trend.rrd:OutOct:AVERAGE",
+                     "CDEF:escalaOut=traficoSalida,8,*",
+                     "VDEF:cargaMAX=traficoSalida,MAXIMUM",
+                     "VDEF:cargaMIN=traficoSalida,MINIMUM",
+                     "VDEF:cargaSTDEV=traficoSalida,STDEV",
+                     "VDEF:cargaLAST=traficoSalida,LAST",
+                     
+                     
+                     "CDEF:umbral1500=escalaOut,1500,LT,0,escalaOut,IF",
+                     "LINE3:escalaOut#00FF00:Tráfico de salida",
+                     
+                     "LINE3:umbral1500#abebc6:Carga traficoSalida mayor de 1500",
+                     "HRULE:1500#2ecc71:Umbral  1500",
+                     
+                     "CDEF:umbral2500=escalaOut,2500,LT,0,escalaOut,IF",
+                     "LINE3:umbral2500#f9e79f:Trafico Salida mayor de 2500",
+                     "HRULE:2500#f1c40f:Umbral  2500",
+                     
+                     "CDEF:umbral4000=escalaOut,4000,LT,0,escalaOut,IF",
+                     "LINE3:umbral4000#FF9F00:Trafico Salida mayor de 4000",
+                     "HRULE:4000#FF0000:Umbral  4000",
+                     
+                     "PRINT:cargaLAST:%6.2lf",
+                     "GPRINT:cargaMIN:%6.2lf %SMIN",
+                     "GPRINT:cargaSTDEV:%6.2lf %SSTDEV",
+                     "GPRINT:cargaLAST:%6.2lf %SLAST" )
+    
+
+def monitorizar():
+    monitoreo_cpu = Thread(target=cpu, name="Cpu")
+    monitoreo_cpu.start()
+    
+    monitoreo_ram = Thread(target=ram, name="Ram")
+    monitoreo_ram.start()
+    
+    monitoreo_entrada = Thread(target=entrada, name="Entrada")
+    monitoreo_entrada.start()
+    
+    monitoreo_salida = Thread(target=salida, name="Salida")
+    monitoreo_salida.start()
+    
+def cpu():
+    ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
+    timestamp=ultima_actualizacion['date'].timestamp()
+    dato=ultima_actualizacion['ds']["CPUload"]
+    
+    if dato > 25:
+        grafica_cpu(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 1")
+        
+    elif dato > 50:
+        grafica_cpu(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 2")
+        
+    elif dato > 75:
+        grafica_cpu(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 3")
+        
+
+def ram():
+    ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
+    timestamp=ultima_actualizacion['date'].timestamp()
+    dato=ultima_actualizacion['ds']["RAMload"]
+    
+    if dato > 25:
+        graficar_ram(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 1")
+        
+    elif dato > 50:
+        graficar_ram(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 2")
+        
+    elif dato > 75:
+        graficar_ram(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 3")
+        
+        
+def entrada():
+    ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
+    timestamp=ultima_actualizacion['date'].timestamp()
+    dato=ultima_actualizacion['ds']["InOct"]
+    
+    if dato > 1500:
+        graficar_entrada(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 1")
+        
+    elif dato > 2500:
+        graficar_entrada(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 2")
+        
+    elif dato > 4000:
+        graficar_entrada(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 3")
+        
+        
+def salida():
+    ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
+    timestamp=ultima_actualizacion['date'].timestamp()
+    dato=ultima_actualizacion['ds']["InOct"]
+    
+    if dato > 1500:
+        graficar_salida(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 1")
+        
+    elif dato > 2500:
+        graficar_salida(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 2")
+        
+    elif dato > 4000:
+        graficar_salida(int(timestamp))
+        send_alert_attached("Sobrepasa el umbral 3")
 
 """ Programa Principal """
 agentes = []
@@ -466,10 +621,10 @@ while opcion != 5:
 
     elif opcion == 4:
         """ Generamos un reporte en PDF """
-        epochInicio = solicitar_fecha(1)
-        epochFinal = solicitar_fecha(0)
-        generar_graficas(epochInicio, epochFinal)
-        generar_reporte(agentes)
+        monitorizar()
+        print("LISTOSSS")
+        pausar()
+        """ generar_reporte(agentes) """
 
     opcion = desplegar_menu()
 

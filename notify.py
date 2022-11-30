@@ -21,10 +21,27 @@ def send_alert_attached(subject):
     msg['Subject'] = subject
     msg['From'] = mailsender
     msg['To'] = mailreceip
-    fp = open(imgpath+'deteccion.png', 'rb')
-    img = MIMEImage(fp.read())
-    fp.close()
-    msg.attach(img)
+    
+    fpcpu = open(imgpath+'cpu.png', 'rb')
+    fpram = open(imgpath+'ram.png', 'rb')
+    fpentrada = open(imgpath+'traficoEntrada.png', 'rb')
+    fpsalida = open(imgpath+'traficoSalida.png', 'rb')
+    
+    imgcpu = MIMEImage(fpcpu.read())
+    imgram = MIMEImage(fpram.read())
+    imgentrada = MIMEImage(fpentrada.read())
+    imgsalida = MIMEImage(fpsalida.read())
+    
+    fpcpu.close()
+    fpram.close()
+    fpentrada.close()
+    fpsalida.close()
+    
+    msg.attach(imgcpu)
+    msg.attach(imgram)
+    msg.attach(imgentrada)
+    msg.attach(imgsalida)
+    
     s = smtplib.SMTP(mailserver)
 
     s.starttls()
