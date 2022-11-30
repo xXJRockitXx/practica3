@@ -518,34 +518,80 @@ def graficar_salida(ultima_lectura):
     
 
 def monitorizar():
+    """ monitoreo_cpu = Thread(target=cpu, name="Cpu", daemon=True)
+    
+    monitoreo_ram = Thread(target=ram, name="Ram", daemon=True)
+    
+    monitoreo_entrada = Thread(target=entrada, name="Entrada", daemon=True)
+    
+    monitoreo_salida = Thread(target=salida, name="Salida", daemon=True) """
+    
     monitoreo_cpu = Thread(target=cpu, name="Cpu")
-    monitoreo_cpu.start()
     
     monitoreo_ram = Thread(target=ram, name="Ram")
-    monitoreo_ram.start()
     
     monitoreo_entrada = Thread(target=entrada, name="Entrada")
-    monitoreo_entrada.start()
     
     monitoreo_salida = Thread(target=salida, name="Salida")
+    
+    
+    """ monitoreo_cpu.start()
+    monitoreo_ram.start()
+    monitoreo_entrada.start()
     monitoreo_salida.start()
+    
+    
+    monitoreo_ram.join()
+    monitoreo_entrada.join()
+    monitoreo_salida.join() """
+    
+    monitoreo_cpu.start()
+    monitoreo_cpu.join()
+    
+    monitoreo_ram.start()
+    monitoreo_ram.join()
+    
+    monitoreo_entrada.start()
+    monitoreo_entrada.join()
+    
+    monitoreo_salida.start()
+    monitoreo_salida.join()
+    
+    limpiar_pantalla()
+    print("Umbrale sobrepasados...")
+    send_alert_attached("Sobrepasa el umbral")
+    print("\nEnviando correos...")
+    pausar()
+    
+    
     
 def cpu():
     ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
     timestamp=ultima_actualizacion['date'].timestamp()
     dato=ultima_actualizacion['ds']["CPUload"]
     
-    if dato > 25:
-        grafica_cpu(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 1")
+    while 1:  
+        if dato > 25:
+            grafica_cpu(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 1") """
+            break
+            
+        elif dato > 50:
+            grafica_cpu(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 2") """
+            break
+            
+        elif dato > 75:
+            grafica_cpu(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 3") """
+            break
         
-    elif dato > 50:
-        grafica_cpu(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 2")
-        
-    elif dato > 75:
-        grafica_cpu(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 3")
+        else:
+            ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
+            timestamp=ultima_actualizacion['date'].timestamp()
+            dato=ultima_actualizacion['ds']["CPUload"]
+            limpiar_pantalla()
+            print("Esperando carga en CPU: " + str(dato))
         
 
 def ram():
@@ -553,17 +599,29 @@ def ram():
     timestamp=ultima_actualizacion['date'].timestamp()
     dato=ultima_actualizacion['ds']["RAMload"]
     
-    if dato > 25:
-        graficar_ram(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 1")
+    while 1:
+        if dato > 25:
+            graficar_ram(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 1") """
+            break
+            
+        elif dato > 50:
+            graficar_ram(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 2") """
+            break
+            
+        elif dato > 75:
+            graficar_ram(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 3") """
+            break
         
-    elif dato > 50:
-        graficar_ram(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 2")
-        
-    elif dato > 75:
-        graficar_ram(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 3")
+        else:
+            ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
+            timestamp=ultima_actualizacion['date'].timestamp()
+            dato=ultima_actualizacion['ds']["RAMload"]
+            limpiar_pantalla()
+            print("Esperando carga en RAM: " + str(dato))
+            
         
         
 def entrada():
@@ -571,17 +629,28 @@ def entrada():
     timestamp=ultima_actualizacion['date'].timestamp()
     dato=ultima_actualizacion['ds']["InOct"]
     
-    if dato > 1500:
-        graficar_entrada(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 1")
+    while 1:
+        if dato > 1500:
+            graficar_entrada(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 1") """
+            break
+            
+        elif dato > 2500:
+            graficar_entrada(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 2") """
+            break
+            
+        elif dato > 4000:
+            graficar_entrada(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 3") """
+            break
         
-    elif dato > 2500:
-        graficar_entrada(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 2")
-        
-    elif dato > 4000:
-        graficar_entrada(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 3")
+        else:
+            ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
+            timestamp=ultima_actualizacion['date'].timestamp()
+            dato=ultima_actualizacion['ds']["InOct"]    
+            limpiar_pantalla()
+            print("Esperando carga en Entrada: " + str(dato))
         
         
 def salida():
@@ -589,17 +658,28 @@ def salida():
     timestamp=ultima_actualizacion['date'].timestamp()
     dato=ultima_actualizacion['ds']["InOct"]
     
-    if dato > 1500:
-        graficar_salida(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 1")
+    while 1:
+        if dato > 1500:
+            graficar_salida(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 1") """
+            break
+            
+        elif dato > 2500:
+            graficar_salida(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 2") """
+            break
+            
+        elif dato > 4000:
+            graficar_salida(int(timestamp))
+            """ send_alert_attached("Sobrepasa el umbral 3") """
+            break
         
-    elif dato > 2500:
-        graficar_salida(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 2")
-        
-    elif dato > 4000:
-        graficar_salida(int(timestamp))
-        send_alert_attached("Sobrepasa el umbral 3")
+        else:
+            ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
+            timestamp=ultima_actualizacion['date'].timestamp()
+            dato=ultima_actualizacion['ds']["InOct"]  
+            limpiar_pantalla()
+            print("Esperando carga en Salida: " + str(dato))
 
 """ Programa Principal """
 agentes = []
@@ -620,10 +700,8 @@ while opcion != 5:
         buscar_hostname(agentes)
 
     elif opcion == 4:
-        """ Generamos un reporte en PDF """
+        """ Monitorizamos el agente agregado """
         monitorizar()
-        print("LISTOSSS")
-        pausar()
         """ generar_reporte(agentes) """
 
     opcion = desplegar_menu()
