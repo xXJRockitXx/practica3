@@ -8,6 +8,7 @@ from datetime import datetime
 from pysnmp.hlapi import *
 from threading import *
 from  notify import send_alert_attached
+from email.mime.text import MIMEText
 
 rrdpath = '/home/jrockit/Documentos/Redes/practica3/RRD/'
 imgpath = '/home/jrockit/Documentos/Redes/practica3/IMG/'
@@ -528,11 +529,11 @@ def monitorizar():
     
     monitoreo_cpu = Thread(target=cpu, name="Cpu")
     
-    monitoreo_ram = Thread(target=ram, name="Ram")
+    """ monitoreo_ram = Thread(target=ram, name="Ram")
     
     monitoreo_entrada = Thread(target=entrada, name="Entrada")
     
-    monitoreo_salida = Thread(target=salida, name="Salida")
+    monitoreo_salida = Thread(target=salida, name="Salida") """
     
     
     """ monitoreo_cpu.start()
@@ -548,14 +549,14 @@ def monitorizar():
     monitoreo_cpu.start()
     monitoreo_cpu.join()
     
-    monitoreo_ram.start()
+    """ monitoreo_ram.start()
     monitoreo_ram.join()
     
     monitoreo_entrada.start()
     monitoreo_entrada.join()
     
     monitoreo_salida.start()
-    monitoreo_salida.join()
+    monitoreo_salida.join() """
     
     limpiar_pantalla()
     print("Umbrale sobrepasados...")
@@ -573,25 +574,23 @@ def cpu():
     while 1:  
         if dato > 25:
             grafica_cpu(int(timestamp))
-            """ send_alert_attached("Sobrepasa el umbral 1") """
             break
             
-        elif dato > 50:
+        """ elif dato > 50:
             grafica_cpu(int(timestamp))
-            """ send_alert_attached("Sobrepasa el umbral 2") """
+            
             break
             
         elif dato > 75:
             grafica_cpu(int(timestamp))
-            """ send_alert_attached("Sobrepasa el umbral 3") """
-            break
+            
+            break """
         
-        else:
-            ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
-            timestamp=ultima_actualizacion['date'].timestamp()
-            dato=ultima_actualizacion['ds']["CPUload"]
-            limpiar_pantalla()
-            print("Esperando carga en CPU: " + str(dato))
+        ultima_actualizacion = rrdtool.lastupdate(rrdpath + "trend.rrd")
+        timestamp=ultima_actualizacion['date'].timestamp()
+        dato=ultima_actualizacion['ds']["CPUload"]
+        limpiar_pantalla()
+        print("Esperando carga en CPU: " + str(dato))
         
 
 def ram():

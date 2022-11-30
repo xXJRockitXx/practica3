@@ -33,3 +33,5 @@ def send_alert_attached(subject):
 
     s.sendmail(mailsender, mailreceip, msg.as_string())
     s.quit()
+    
+send_alert_attached("HOLA")
